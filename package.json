@@ -1,0 +1,31 @@
+{
+  "name": "paywings",
+  "version": "0.1.0",
+  "description": "Policy-governed payments for AI agents (MCP + CLI) — sandbox",
+  "scripts": {
+    "test": "node --no-warnings --test \"test/*.test.ts\"",
+    "typecheck": "tsc",
+    "paywings": "node --no-warnings src/cli.ts"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^7.0.2"
+  },
+  "type": "module",
+  "bin": {
+    "paywings": "./bin/paywings.js"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diego-maeda/paywings.git"
+  }
+}
