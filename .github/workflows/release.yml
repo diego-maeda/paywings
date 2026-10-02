@@ -5,12 +5,15 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -30,12 +33,14 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
       # Trusted publishing needs npm >= 11.5.1.
-      - run: npm install --global npm@latest
-      - run: npm ci
+      - run: npm install --global npm@11
+      - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm publish
