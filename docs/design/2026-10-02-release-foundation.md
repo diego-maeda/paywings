@@ -34,7 +34,7 @@ Modo servidor, Docker, binários standalone e painel web (v0.2.0 e v0.3.0).
   - `publishConfig`: `{ "access": "public" }` (a proveniência é automática no trusted publishing);
   - scripts `build` (`tsc -p tsconfig.build.json`) e `prepack` (`npm run build`);
   - `engines.node`: `>=22.18` (mínimo para remover tipos sem flag no desenvolvimento e para `node:sqlite` sem flag);
-  - `version`: `0.0.0`, que o release-please muda para `0.1.0`.
+  - `version`: `0.0.0`. A primeira versão (`0.1.0`) vem de `initial-version` no `release-please-config.json`, porque o release-please ignora a versão exata `0.0.0` do manifesto e proporia `1.0.0`.
 - `dist/` entra no `.gitignore`.
 - `paywings --version` e `-v` leem a versão do `package.json` do próprio pacote (resolvido a partir de `import.meta.url`), funcionando tanto de `src/` quanto de `dist/`.
 
@@ -52,14 +52,15 @@ Gatilhos: `pull_request` e `push` na `main`.
 
 Gatilho: `push` na `main`.
 
-1. **Job `release-please`** (`googleapis/release-please-action@v4`):
+1. **Job `release-please`** (`googleapis/release-please-action@v5`):
    - configuração em `release-please-config.json`: `release-type: node`, `bump-minor-pre-major: true`, `include-component-in-tag: false` (tags `vX.Y.Z`);
+   - `initial-version: 0.1.0` em `packages["."]`, que define a primeira versão publicada;
    - versão atual em `.release-please-manifest.json`: `{ ".": "0.0.0" }`;
    - gera `CHANGELOG.md` com as seções Features, Bug Fixes e Security (`sec:` mapeado para Security);
    - saídas: `release_created`, `tag_name`.
 2. **Job `publish-npm`** (só se `release_created`):
    - `permissions: id-token: write, contents: read`;
-   - Node 24, `npm install -g npm@latest` (trusted publishing exige npm 11.5.1 ou mais novo);
+   - Node 24, `npm install -g npm@11` (trusted publishing exige npm 11.5.1 ou mais novo);
    - `npm ci`, `npm test`, `npm publish`; o `prepack` compila.
 
 Regras de versão na fase `0.x`:
@@ -76,7 +77,7 @@ Regras de versão na fase `0.x`:
 O npm só permite configurar o trusted publishing num pacote que já existe.
 
 1. Merge do PR de release `0.1.0`. O job `publish-npm` falha por falta de credencial, e isso é esperado.
-2. O dono faz checkout da tag `v0.1.0` e roda `npm publish` localmente.
+2. O dono faz checkout da tag `v0.1.0`, roda `npm ci` (o `prepack` precisa do `tsc` das devDependencies) e depois `npm publish` localmente.
 3. O dono configura o trusted publisher no npmjs.com:
    - repositório `diego-maeda/paywings`;
    - workflow `release.yml`;
@@ -111,7 +112,7 @@ Alternativa descartada: guardar um token npm como secret só para a primeira pub
 ## 6. Entrega
 
 - Branch `chore/release-foundation` e PR para a `main`, com título `chore: release foundation`.
-- O PR não gera release sozinho. Mesmo assim, o primeiro PR de release vai propor `0.1.0`, porque o histórico já tem um commit `feat:`.
+- O PR não gera release sozinho. Mesmo assim, o primeiro PR de release vai propor `0.1.0`, por causa do `initial-version: 0.1.0` no `release-please-config.json`.
 
 ## Riscos
 

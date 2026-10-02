@@ -29,5 +29,4 @@ A patch release never breaks the public API. Pin a minor range (`~0.1.0`) to avo
 
 ## From 1.0 on
 
-Breaking changes require a major version. Deprecated behavior keeps working for at least one minor release and
-prints a warning before it is removed.
+Breaking changes require a major version. Deprecated behavior keeps working for at least one minor release.
