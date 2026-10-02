@@ -15,8 +15,9 @@ npm install --global paywings
 paywings init       # cria ~/.paywings/sandbox.db com o agente "demo" e R$ 500,00
 ```
 
-Ou sem instalar: `npx paywings init`. As versões seguem [semver](docs/VERSIONING.md); veja o
-[changelog](CHANGELOG.md).
+Ou sem instalar: `npx paywings init`. Nesse caso, termine o comando `claude mcp add` que o `init`
+imprime com `-- npx -y paywings mcp` em vez de `-- paywings mcp`. As versões seguem
+[semver](docs/VERSIONING.md); veja o [changelog](CHANGELOG.md).
 
 ## Conectando um agente
 
