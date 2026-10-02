@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
+    "smoke:package": "scripts/smoke-package.sh",
     "test": "node --no-warnings --test \"test/*.test.ts\"",
     "typecheck": "tsc",
     "paywings": "node --no-warnings src/cli.ts"
