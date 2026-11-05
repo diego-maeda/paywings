@@ -50,3 +50,9 @@ test('disallowed rail is denied', () => {
 test('an empty allow list accepts any payee', () => {
   assert.equal(evaluate({ ...base, payeeId: 'anything.com', policy: { ...base.policy, allowedMerchants: [] } }).outcome, 'approved');
 });
+
+test('an unverified payee goes to a human even below the threshold', () => {
+  const d = evaluate({ ...base, amountCents: 10_00, payeeUnverified: true });
+  assert.equal(d.outcome, 'pending_approval');
+  assert.deepEqual(d.reasons.map((r) => r.code), ['PAYEE_UNVERIFIED']);
+});

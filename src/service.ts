@@ -188,12 +188,45 @@ export type PayWingsOptions = {
   path?: string;
   now?: () => Date;
   rails?: Rails;
+  /** IANA time zone that decides where a month starts for the monthly limit. */
+  timeZone?: string;
 };
+
+export const DEFAULT_TIME_ZONE = 'America/Sao_Paulo';
+
+/** The instant the calendar month containing `at` starts in `timeZone`. */
+export function monthStart(at: Date, timeZone: string): Date {
+  const wall = (d: Date) => {
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hourCycle: 'h23',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+      })
+        .formatToParts(d)
+        .map((p) => [p.type, Number(p.value)]),
+    );
+    return parts as Record<'year' | 'month' | 'day' | 'hour' | 'minute' | 'second', number>;
+  };
+  const { year, month } = wall(at);
+  const guess = Date.UTC(year, month - 1, 1);
+  // Offset of the zone at that moment: wall clock read as UTC, minus the real instant.
+  const w = wall(new Date(guess));
+  const offset = Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute, w.second) - guess;
+  return new Date(guess - offset);
+}
 
 export function createPayWings(opts: PayWingsOptions = {}) {
   const path = opts.path ?? ':memory:';
   const now = opts.now ?? (() => new Date());
   const rails = opts.rails ?? sandboxRails;
+  const timeZone = opts.timeZone ?? DEFAULT_TIME_ZONE;
+  monthStart(new Date(), timeZone); // fails fast on an unknown zone name
   const db = new DatabaseSync(path);
   if (path !== ':memory:') db.exec('PRAGMA journal_mode = WAL');
   db.exec('PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;');
@@ -261,14 +294,14 @@ export function createPayWings(opts: PayWingsOptions = {}) {
 
   function spendContext(agentId: string, excludeId: string | null) {
     const at = now();
-    const monthStart = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), 1)).toISOString();
+    const since = monthStart(at, timeZone).toISOString();
     const hourAgo = new Date(at.getTime() - 60 * 60 * 1000).toISOString();
     const committed = db
       .prepare(
         `SELECT COALESCE(SUM(amount_cents), 0) AS total FROM payments
          WHERE agent_id = ? AND status IN ('executed', 'pending_approval') AND created_at >= ? AND id != ?`,
       )
-      .get(agentId, monthStart, excludeId ?? '') as Row;
+      .get(agentId, since, excludeId ?? '') as Row;
     const recent = db
       .prepare(
         `SELECT COUNT(*) AS n FROM payments
@@ -285,7 +318,12 @@ export function createPayWings(opts: PayWingsOptions = {}) {
     };
   }
 
-  function resolvePayee(req: PaymentRequest): { payeeId: string | null; merchant: Merchant; errors: Reason[] } {
+  function resolvePayee(req: PaymentRequest): {
+    payeeId: string | null;
+    merchant: Merchant;
+    errors: Reason[];
+    unverified?: boolean;
+  } {
     if (req.rail === 'card') {
       return {
         payeeId: req.merchantDomain ? normalizePayee(req.merchantDomain) : null,
@@ -316,6 +354,10 @@ export function createPayWings(opts: PayWingsOptions = {}) {
           pixCity: code.merchantCity,
         },
         errors,
+        // A dynamic code points at the PSP's payload URL. Its host identifies the PSP, which
+        // serves many merchants, so matching it against the allow list proves little.
+        // Production must fetch and verify the signed payload to learn the real key.
+        unverified: !code.pixKey,
       };
     } catch (err) {
       if (!(err instanceof BrCodeError)) throw err;
@@ -523,7 +565,11 @@ export function createPayWings(opts: PayWingsOptions = {}) {
 
     getWallet(apiKey: string | undefined) {
       const agent = authenticate(apiKey);
-      const ctx = spendContext(agent.id, null);
+      // Stale approvals must not keep counting as pending in what the agent sees.
+      const ctx = tx(() => {
+        expirePending();
+        return spendContext(agent.id, null);
+      });
       const p = agent.policy;
       return {
         agent: agent.name,
@@ -573,6 +619,7 @@ export function createPayWings(opts: PayWingsOptions = {}) {
           category: req.category,
           payeeId: payee.payeeId,
           instrumentErrors: payee.errors,
+          payeeUnverified: payee.unverified,
           balanceCents: fresh.balanceCents,
           ...spendContext(fresh.id, null),
         });

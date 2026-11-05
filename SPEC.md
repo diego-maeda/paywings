@@ -59,10 +59,10 @@ Função pura `evaluate(intent, agent, policy, context) → { outcome, reasons }
 5. Recebedor na lista permitida — para Pix, comparado com a **chave extraída do BR Code**.
 6. Categoria não bloqueada.
 7. `amount ≤ max_per_tx`.
-8. `gasto_mês + pendentes + amount ≤ monthly_limit`.
+8. `gasto_mês + pendentes + amount ≤ monthly_limit` (mês no fuso `America/Sao_Paulo` por padrão).
 9. Transações na última hora < `max_tx_per_hour`.
 10. Saldo suficiente.
-11. `amount > approval_above` → `pending_approval`; senão → `approved` (executa na hora).
+11. `amount > approval_above` → `pending_approval`; senão → `approved` (executa na hora). Pix com BR Code dinâmico vai sempre para aprovação (`PAYEE_UNVERIFIED`): o código só identifica o PSP, não o recebedor final.
 
 Os motivos retornam com código estável (ex.: `MERCHANT_NOT_ALLOWED`) para o agente explicar ao usuário ou ajustar o pedido.
 

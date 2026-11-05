@@ -59,10 +59,10 @@ Each agent has its own policy, checked in this order:
 4. Merchant allow-list. A domain also matches its subdomains, but lookalikes such as `vercel.com.evil.io` don't match.
 5. Blocked categories.
 6. Per-transaction limit.
-7. Monthly limit. Pending payments count toward it.
+7. Monthly limit. Pending payments count toward it. Months start at midnight in `PAYWINGS_TZ` (default `America/Sao_Paulo`).
 8. Payments per hour.
 9. Balance.
-10. Human-approval threshold.
+10. Human-approval threshold. Dynamic Pix codes (which name only the PSP, not the final payee) always go to a human.
 
 All failing rules are reported at once.
 
