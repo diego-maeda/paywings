@@ -6,19 +6,22 @@ Este protótipo deixa agentes de IA pagarem, via MCP ou terminal, apenas dentro 
 
 A especificação está em [SPEC.md](SPEC.md).
 
-## Requisitos
+## Instalação
 
-Node 22.18 ou mais novo. Os arquivos TypeScript rodam direto, sem etapa de build.
-
-## Começando
+Requer Node 22.18 ou mais novo.
 
 ```bash
-npm install
-npm link            # disponibiliza o comando `paywings`
-paywings init        # cria ~/.paywings/sandbox.db com o agente "demo" e R$ 500,00
+npm install --global paywings
+paywings init       # cria ~/.paywings/sandbox.db com o agente "demo" e R$ 500,00
 ```
 
-O comando `init` imprime a chave do agente e o comando pronto para registrar o MCP no Claude Code:
+Ou sem instalar: `npx paywings init`. Nesse caso, termine o comando `claude mcp add` que o `init`
+imprime com `-- npx -y paywings mcp` em vez de `-- paywings mcp`. As versões seguem
+[semver](docs/VERSIONING.md); veja o [changelog](CHANGELOG.md).
+
+## Conectando um agente
+
+O comando `paywings init` imprime a chave do agente e o comando pronto para registrar o MCP no Claude Code:
 
 ```bash
 claude mcp add paywings --env PAYWINGS_AGENT_KEY=pw_test_... --env PAYWINGS_DB=~/.paywings/sandbox.db -- paywings mcp
@@ -52,9 +55,13 @@ paywings status pay_...
 ## Testes
 
 ```bash
+npm install
 npm test
 npm run typecheck
+npm run smoke:package
 ```
+
+Veja o [CONTRIBUTING.md](CONTRIBUTING.md) para o padrão de commits e releases.
 
 ## Estrutura
 

@@ -16,19 +16,22 @@ Prompt injection can talk an agent into anything, so spending rules can't live i
 - **Humans approve out of band.** Payments above a threshold wait for the owner. In the sandbox, `approve` requires an interactive terminal, which an agent running shell commands doesn't have.
 - **Everything is auditable.** Every event goes into an append-only, hash-chained log: intent, decision, approval, execution. Card numbers never reach the log.
 
-## Requirements
+## Install
 
-Node 22.18 or newer. TypeScript runs directly, with no build step.
-
-## Quick start
+Requires Node 22.18 or newer.
 
 ```bash
-npm install
-npm link            # puts `paywings` on your PATH
-paywings init        # creates ~/.paywings/sandbox.db with a "demo" agent and R$ 500.00
+npm install --global paywings
+paywings init       # creates ~/.paywings/sandbox.db with a "demo" agent and R$ 500.00
 ```
 
-`init` prints the agent key and a ready-made command to register the MCP server with Claude Code:
+Or run without installing: `npx paywings init`. In that case, end the `claude mcp add` command that `init`
+prints with `-- npx -y paywings mcp` instead of `-- paywings mcp`. Versions follow
+[semver](docs/VERSIONING.md); see the [changelog](CHANGELOG.md).
+
+## Connect an agent
+
+`paywings init` prints the agent key and a ready-made command to register the MCP server with Claude Code:
 
 ```bash
 claude mcp add paywings --env PAYWINGS_AGENT_KEY=pw_test_... --env PAYWINGS_DB=~/.paywings/sandbox.db -- paywings mcp
@@ -91,9 +94,13 @@ CLI output is in Portuguese for now. `pay` and `status` print JSON.
 ## Development
 
 ```bash
-npm test            # node:test, 33 tests
+npm install
+npm test
 npm run typecheck
+npm run smoke:package
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for commit and release conventions.
 
 | File | Role |
 | --- | --- |
