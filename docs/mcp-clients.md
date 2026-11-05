@@ -54,4 +54,4 @@ Ask the agent something that needs a purchase, for example:
 | --- | --- |
 | `Invalid agent key` when the server starts | The key doesn't match the database in `PAYWINGS_DB`; both must come from the same `init` |
 | The client lists no PayWings tools | Check the client's MCP logs; usually `paywings` isn't on its `PATH` |
-| `paywings requires Node 22.18 or newer` | Update Node; GUI apps may use a different Node than your shell |
+| Errors loading `node:sqlite` or `.ts` files | Use Node 22.18 or newer; GUI apps may use a different Node than your shell |
