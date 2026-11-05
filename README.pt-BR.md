@@ -8,15 +8,16 @@ A especificação está em [SPEC.md](SPEC.md).
 
 ## Requisitos
 
-Node 22.18 ou mais novo. Os arquivos TypeScript rodam direto, sem etapa de build.
+Node 22.18 ou mais novo.
 
 ## Começando
 
 ```bash
-npm install
-npm link            # disponibiliza o comando `paywings`
+npm install -g paywings
 paywings init        # cria ~/.paywings/sandbox.db com o agente "demo" e R$ 500,00
 ```
+
+A partir de um clone: `npm install && npm link` (o script `prepare` compila `src/` em `dist/`).
 
 O comando `init` imprime a chave do agente e o comando pronto para registrar o MCP no Claude Code:
 
@@ -54,6 +55,7 @@ paywings status pay_...
 ```bash
 npm test
 npm run typecheck
+npm run build       # compila src/ em dist/, que é o que o pacote publicado executa
 ```
 
 ## Estrutura

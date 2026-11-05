@@ -18,15 +18,16 @@ Prompt injection can talk an agent into anything, so spending rules can't live i
 
 ## Requirements
 
-Node 22.18 or newer. TypeScript runs directly, with no build step.
+Node 22.18 or newer.
 
 ## Quick start
 
 ```bash
-npm install
-npm link            # puts `paywings` on your PATH
+npm install -g paywings
 paywings init        # creates ~/.paywings/sandbox.db with a "demo" agent and R$ 500.00
 ```
+
+From a clone instead: `npm install && npm link` (the `prepare` script compiles `src/` into `dist/`).
 
 `init` prints the agent key and a ready-made command to register the MCP server with Claude Code:
 
@@ -91,8 +92,9 @@ CLI output is in Portuguese for now. `pay` and `status` print JSON.
 ## Development
 
 ```bash
-npm test            # node:test, 33 tests
+npm test            # node:test, runs the TypeScript sources directly
 npm run typecheck
+npm run build       # compiles src/ into dist/, which the published package runs
 ```
 
 | File | Role |
