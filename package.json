@@ -1,9 +1,17 @@
 {
   "name": "paywings",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Policy-governed payments for AI agents (MCP + CLI) — sandbox",
-  "files": ["bin", "dist", "LICENSE", "README.md", "README.pt-BR.md"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "bin",
+    "dist",
+    "LICENSE",
+    "README.md",
+    "README.pt-BR.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
