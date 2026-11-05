@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { BrCodeError, parseBrCode } from './brcode.ts';
 import { formatBRL } from './money.ts';
 import { DEFAULT_POLICY, evaluate, normalizePayee, type Policy, type Rail, type Reason } from './policy.ts';
@@ -102,6 +102,10 @@ CREATE TABLE IF NOT EXISTS payments (
   UNIQUE (agent_id, idempotency_key)
 );
 CREATE INDEX IF NOT EXISTS payments_agent_created ON payments (agent_id, created_at);
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS audit (
   seq INTEGER PRIMARY KEY AUTOINCREMENT,
   actor TEXT NOT NULL,
@@ -346,6 +350,40 @@ export function createPayWings(opts: PayWingsOptions = {}) {
 
   return {
     db,
+
+    // ---- Owner credential ----------------------------------------------------
+    // The owner key is what separates the human from the agent: the agent's shell can run
+    // the CLI and fake a TTY, but it never holds this key. Only its hash is stored.
+
+    hasOwnerKey(): boolean {
+      return db.prepare("SELECT 1 FROM settings WHERE key = 'owner_key_hash'").get() !== undefined;
+    },
+
+    /** Creates the owner key once. Returns the plaintext key, which is never stored. */
+    createOwnerKey(): string {
+      const ownerKey = `pw_owner_${randomBytes(24).toString('base64url')}`;
+      tx(() => {
+        if (db.prepare("SELECT 1 FROM settings WHERE key = 'owner_key_hash'").get()) {
+          throw new PayWingsError('OWNER_KEY_EXISTS', 'This sandbox already has an owner key');
+        }
+        db.prepare("INSERT INTO settings (key, value) VALUES ('owner_key_hash', ?)").run(sha256(ownerKey));
+        audit('owner', 'owner.key_created', {});
+      });
+      return ownerKey;
+    },
+
+    /** Throws unless `ownerKey` matches the stored owner key. */
+    verifyOwnerKey(ownerKey: string | undefined): void {
+      const row = db.prepare("SELECT value FROM settings WHERE key = 'owner_key_hash'").get() as Row | undefined;
+      if (!row) {
+        throw new PayWingsError('OWNER_KEY_MISSING', 'This sandbox has no owner key yet. Run: paywings owner setup');
+      }
+      const expected = Buffer.from(row.value as string, 'hex');
+      const given = Buffer.from(sha256(ownerKey?.trim() ?? ''), 'hex');
+      if (!ownerKey?.trim() || !timingSafeEqual(expected, given)) {
+        throw new PayWingsError('OWNER_UNAUTHORIZED', 'Invalid owner key');
+      }
+    },
 
     // ---- Owner scope -------------------------------------------------------
 

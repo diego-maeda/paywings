@@ -97,7 +97,8 @@ paywings agents create <nome> [limites...]      # dono
 paywings agents freeze|unfreeze <nome>          # dono (kill switch)
 paywings topup <agente> <valor>                 # dono
 paywings pay --amount ... --rail card|pix ...   # agente (PAYWINGS_AGENT_KEY)
-paywings pending | approve <id> | reject <id>   # dono — approve exige terminal interativo
+paywings pending | approve <id> | reject <id>   # dono — approve/reject pedem a chave de dono; approve exige terminal interativo
+paywings owner setup                            # cria a chave de dono em sandbox antigo
 paywings payments [--agent <nome>]
 paywings audit verify                           # valida a cadeia de hashes
 paywings mcp                                    # sobe o servidor MCP (stdio)
@@ -109,7 +110,7 @@ paywings mcp                                    # sobe o servidor MCP (stdio)
 
 ## 7. Aprovação humana
 
-- MVP: `paywings approve <id>` exige TTY interativo e confirmação digitada do valor. Agentes rodando comandos não interativos não conseguem aprovar.
+- MVP: comandos de dono que mexem em dinheiro ou limites pedem a **chave de dono** (`pw_owner_…`, só o hash fica no banco), que o agente nunca recebe. `approve` também exige TTY e confirmação digitada do valor, como defesa extra: um TTY pode ser simulado (`script`, `expect`), a chave não. Congelar não pede chave.
 - Produção: aprovação **fora de banda** no dispositivo do dono (WhatsApp, push ou app), com assinatura do mandato (passkey/WebAuthn). A credencial do agente não tem escopo de aprovação.
 
 ## 8. Ameaças e mitigações

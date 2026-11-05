@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { createInterface } from 'node:readline/promises';
+import { createInterface, type Interface } from 'node:readline';
 import { parseArgs } from 'node:util';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { buildBrCode } from './brcode.ts';
@@ -13,16 +13,20 @@ import { cardStillValid, createPayWings, PayWingsError, toView, type Payment } f
 
 const HELP = `paywings — sandbox de pagamentos com políticas para agentes de IA
 
-Dono (humano):
-  init                                  Cria o sandbox com o agente "demo" (saldo R$ 500,00)
+Dono (humano). Comandos marcados com * pedem a chave de dono, digitada no
+terminal ou enviada na primeira linha da entrada padrão. Nunca a coloque numa
+variável de ambiente que o agente possa ler.
+  init                                  Cria o sandbox, a chave de dono e o agente "demo" (R$ 500,00)
+  owner setup                           Cria a chave de dono num sandbox antigo que ainda não tem
   agents list
-  agents create <nome> [limites]        Imprime a chave do agente (mostrada uma única vez)
-  agents policy <nome> [limites]        Altera limites de um agente
-  agents freeze|unfreeze <nome>         Kill switch
-  topup <nome> <valor>
+  agents create <nome> [limites]      * Imprime a chave do agente (mostrada uma única vez)
+  agents policy <nome> [limites]      * Altera limites de um agente
+  agents freeze <nome>                  Kill switch (não pede chave: congelar é sempre seguro)
+  agents unfreeze <nome>              *
+  topup <nome> <valor>                *
   pending                               Pagamentos aguardando aprovação
-  approve <id>                          Exige terminal interativo
-  reject <id> [--note texto]
+  approve <id>                        * Exige terminal interativo
+  reject <id> [--note texto]          *
   payments [--agent nome] [--limit n]
   audit verify | audit log [--limit n]
 
@@ -109,20 +113,66 @@ function printSetup(name: string, apiKey: string) {
   console.log(`  claude mcp add paywings --env PAYWINGS_AGENT_KEY=${apiKey} --env PAYWINGS_DB=${dbPath} -- paywings mcp\n`);
 }
 
-async function confirmApproval(p: Payment & { agentName?: string }): Promise<boolean> {
-  // Agents run shell commands without a TTY; requiring one keeps them from approving their own payments.
+// One reader for the whole process. Lines are queued, so input piped in a single chunk
+// (owner key, then the confirmed amount) is not lost between prompts.
+let reader: { rl: Interface; lines: AsyncIterator<string> } | undefined;
+let muted = false;
+
+async function ask(question: string, opts: { hidden?: boolean } = {}): Promise<string> {
+  if (!reader) {
+    const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: Boolean(process.stdin.isTTY) });
+    // readline echoes keystrokes through this method; muting it hides the owner key while typed.
+    const internal = rl as unknown as { _writeToOutput(s: string): void };
+    const write = internal._writeToOutput.bind(rl);
+    internal._writeToOutput = (s: string) => {
+      if (!muted) write(s);
+    };
+    reader = { rl, lines: rl[Symbol.asyncIterator]() };
+  }
+  process.stdout.write(question);
+  muted = Boolean(opts.hidden && process.stdin.isTTY);
+  try {
+    const next = await reader.lines.next();
+    return next.done ? '' : next.value;
+  } finally {
+    if (muted) process.stdout.write('\n');
+    muted = false;
+  }
+}
+
+function closeReader() {
+  reader?.rl.close();
+  reader = undefined;
+}
+
+/** Owner commands need the owner key, which the agent never holds (a faked TTY is not enough). */
+async function requireOwner(m: ReturnType<typeof open>) {
+  if (!m.hasOwnerKey()) m.verifyOwnerKey(undefined); // throws OWNER_KEY_MISSING with the fix
+  m.verifyOwnerKey(await ask('Chave de dono: ', { hidden: true }));
+}
+
+function printOwnerKey(ownerKey: string) {
+  console.log(`\nChave de DONO (guarde num gerenciador de senhas; não será mostrada de novo):\n  ${ownerKey}\n`);
+  console.log('Ela é pedida para criar agentes, mudar limites, recarregar, aprovar e rejeitar.');
+  console.log('Nunca a coloque numa variável de ambiente ou arquivo que o agente consiga ler.\n');
+}
+
+function requireTty() {
+  // Agents run shell commands without a TTY. A TTY can be faked (script, expect), so this is
+  // defense in depth; the owner key is what actually keeps agents from approving.
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     throw new PayWingsError('TTY_REQUIRED', 'approve must be run by a human in an interactive terminal');
   }
+}
+
+async function confirmApproval(p: Payment & { agentName?: string }): Promise<boolean> {
   console.log('\nPagamento aguardando aprovação:');
   console.log(`  Agente:        ${p.agentName}`);
   console.log(`  Valor:         ${formatBRL(p.amountCents)} via ${p.rail}`);
   console.log(`  Recebedor:     ${p.payeeId}${p.merchant.pixName ? ` — ${p.merchant.pixName}, ${p.merchant.pixCity}` : ''}`);
   console.log(`  Agente disse:  ${p.merchant.declaredName} / ${p.category}`);
   console.log(`  Justificativa: ${p.justification}\n`);
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const typed = await rl.question(`Digite o valor (${formatBRL(p.amountCents).replace('R$ ', '')}) para aprovar: `);
-  rl.close();
+  const typed = await ask(`Digite o valor (${formatBRL(p.amountCents).replace('R$ ', '')}) para aprovar: `);
   try {
     return toCents(typed) === p.amountCents;
   } catch {
@@ -155,10 +205,18 @@ async function main() {
   switch (cmd) {
     case 'init': {
       if (m.listAgents().length > 0) throw new PayWingsError('ALREADY_INITIALIZED', `Sandbox already exists at ${dbPath}`);
+      const ownerKey = m.createOwnerKey();
       const { apiKey } = m.createAgent('demo', {}, 500_00);
       console.log(`Sandbox criado em ${dbPath} com o agente "demo" e saldo de R$ 500,00.`);
+      printOwnerKey(ownerKey);
       console.log('Política padrão: até R$ 200,00 por compra, R$ 1.000,00 por mês, aprovação humana acima de R$ 50,00.');
       printSetup('demo', apiKey);
+      return;
+    }
+
+    case 'owner': {
+      if (sub !== 'setup') throw new PayWingsError('UNKNOWN_COMMAND', `Unknown: owner ${sub ?? ''}`);
+      printOwnerKey(m.createOwnerKey());
       return;
     }
 
@@ -175,6 +233,7 @@ async function main() {
         return;
       }
       const name = require(arg, '<nome>');
+      if (sub !== 'freeze') await requireOwner(m);
       if (sub === 'create') {
         const { apiKey } = m.createAgent(name, policyFromFlags(), flags.balance ? toCents(flags.balance) : 0);
         console.log(`Agente "${name}" criado.`);
@@ -192,6 +251,7 @@ async function main() {
     }
 
     case 'topup': {
+      await requireOwner(m);
       const a = m.topUp(require(sub, '<nome>'), toCents(require(arg, '<valor>')));
       console.log(`Novo saldo de ${a.name}: ${formatBRL(a.balanceCents)}`);
       return;
@@ -239,6 +299,8 @@ async function main() {
       const id = require(sub, '<id>');
       const p = m.listPending().find((x) => x.id === id);
       if (!p) throw new PayWingsError('PAYMENT_NOT_FOUND', `${id} is not pending approval`);
+      requireTty();
+      await requireOwner(m);
       if (!(await confirmApproval(p))) {
         console.log('Valor não confere. Nada foi aprovado.');
         process.exitCode = 1;
@@ -250,6 +312,7 @@ async function main() {
     }
 
     case 'reject': {
+      await requireOwner(m);
       m.reject(require(sub, '<id>'), flags.note ?? '');
       console.log(`Rejeitado: ${sub}`);
       return;
@@ -286,10 +349,13 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  if (err instanceof PayWingsError || err instanceof AmountError) {
-    console.error(`erro: ${err.message}`);
-    process.exit(1);
-  }
-  throw err;
-});
+main()
+  .catch((err) => {
+    if (err instanceof PayWingsError || err instanceof AmountError) {
+      console.error(`erro: ${err.message}`);
+      process.exitCode = 1;
+      return;
+    }
+    throw err;
+  })
+  .finally(closeReader);
