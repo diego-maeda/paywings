@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { AmountError, toCents } from './money.ts';
 import { cardStillValid, PayWingsError, toView, type PayWings } from './service.ts';
+import { VERSION } from './version.ts';
 
 type ToolResult = { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
 
@@ -26,7 +27,7 @@ function guard(fn: () => unknown): ToolResult {
  * and changing policy are owner actions and deliberately have no tool here.
  */
 export function createMcpServer(paywings: PayWings, apiKey: string | undefined, now: () => Date = () => new Date()) {
-  const server = new McpServer({ name: 'paywings', version: '0.1.0' });
+  const server = new McpServer({ name: 'paywings', version: VERSION });
 
   server.registerTool(
     'get_wallet',

@@ -1,8 +1,13 @@
 {
   "name": "paywings",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Policy-governed payments for AI agents (MCP + CLI) — sandbox",
+  "files": ["bin", "dist", "LICENSE", "README.md", "README.pt-BR.md"],
+  "publishConfig": { "access": "public" },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "smoke:package": "scripts/smoke-package.sh",
     "test": "node --no-warnings --test \"test/*.test.ts\"",
     "typecheck": "tsc",
     "paywings": "node --no-warnings src/cli.ts"
@@ -20,7 +25,6 @@
   "bin": {
     "paywings": "./bin/paywings.js"
   },
-  "private": true,
   "engines": {
     "node": ">=22.18"
   },
