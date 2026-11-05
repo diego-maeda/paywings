@@ -28,7 +28,7 @@ npm link            # puts `paywings` on your PATH
 paywings init        # creates ~/.paywings/sandbox.db with a "demo" agent and R$ 500.00
 ```
 
-`init` prints an owner key (store it in a password manager), the agent key and a ready-made command to register the MCP server with Claude Code:
+`init` prints the agent key and a ready-made command to register the MCP server with Claude Code:
 
 ```bash
 claude mcp add paywings --env PAYWINGS_AGENT_KEY=pw_test_... --env PAYWINGS_DB=~/.paywings/sandbox.db -- paywings mcp
@@ -68,7 +68,7 @@ All failing rules are reported at once.
 
 ## Owner commands
 
-Commands that create agents, change limits, top up, unfreeze, approve or reject ask for the owner key. Type it at the prompt (it isn't echoed) or pipe it as the first line of stdin. Never put it in an environment variable or file your agent can read: an agent with shell access can run the CLI too. Freezing needs no key, since stopping an agent is always safe.
+`init` also prints an owner key; store it in a password manager. Commands that create agents, change limits, top up, unfreeze, approve or reject ask for the owner key. Type it at the prompt (it isn't echoed) or pipe it as the first line of stdin. Never put it in an environment variable or file your agent can read: an agent with shell access can run the CLI too. Freezing needs no key, since stopping an agent is always safe.
 
 Sandboxes created before the owner key existed: run `paywings owner setup` once.
 

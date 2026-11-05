@@ -18,7 +18,7 @@ npm link            # disponibiliza o comando `paywings`
 paywings init        # cria ~/.paywings/sandbox.db com o agente "demo" e R$ 500,00
 ```
 
-O comando `init` imprime a chave de dono (guarde num gerenciador de senhas), a chave do agente e o comando pronto para registrar o MCP no Claude Code:
+O comando `init` imprime a chave do agente e o comando pronto para registrar o MCP no Claude Code:
 
 ```bash
 claude mcp add paywings --env PAYWINGS_AGENT_KEY=pw_test_... --env PAYWINGS_DB=~/.paywings/sandbox.db -- paywings mcp
@@ -32,7 +32,7 @@ Depois disso, basta pedir ao agente algo como "assine o plano Pro da Vercel". El
 
 ## Como dono
 
-Criar agentes, mudar limites, recarregar, reativar, aprovar e rejeitar pedem a chave de dono. Digite no prompt (ela não aparece na tela) ou envie na primeira linha da entrada padrão. Nunca a coloque numa variável de ambiente ou arquivo que o agente consiga ler: um agente com acesso ao shell também roda o CLI. Congelar não pede chave, porque parar um agente é sempre seguro.
+O `init` também imprime uma chave de dono; guarde num gerenciador de senhas. Criar agentes, mudar limites, recarregar, reativar, aprovar e rejeitar pedem a chave de dono. Digite no prompt (ela não aparece na tela) ou envie na primeira linha da entrada padrão. Nunca a coloque numa variável de ambiente ou arquivo que o agente consiga ler: um agente com acesso ao shell também roda o CLI. Congelar não pede chave, porque parar um agente é sempre seguro.
 
 Sandbox criado antes da chave de dono: rode `paywings owner setup` uma vez.
 
