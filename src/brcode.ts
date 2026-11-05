@@ -98,9 +98,13 @@ function tlv(id: string, value: string): string {
   return id + String(value.length).padStart(2, '0') + value;
 }
 
-/** Builds a static BR Code. Used by the sandbox CLI and tests to produce valid codes. */
+/**
+ * Builds a BR Code: static with `pixKey`, dynamic with `locationUrl` (the PSP payload URL,
+ * without scheme). Used by the sandbox CLI and tests to produce valid codes.
+ */
 export function buildBrCode(input: {
-  pixKey: string;
+  pixKey?: string;
+  locationUrl?: string;
   merchantName: string;
   merchantCity: string;
   amountCents?: number;
@@ -112,7 +116,7 @@ export function buildBrCode(input: {
       : tlv('54', `${Math.floor(input.amountCents / 100)}.${String(input.amountCents % 100).padStart(2, '0')}`);
   const payload =
     tlv('00', '01') +
-    tlv('26', tlv('00', PIX_GUI) + tlv('01', input.pixKey)) +
+    tlv('26', tlv('00', PIX_GUI) + (input.locationUrl ? tlv('25', input.locationUrl) : tlv('01', input.pixKey ?? ''))) +
     tlv('52', '0000') +
     tlv('53', '986') +
     amount +

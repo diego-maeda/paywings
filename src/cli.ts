@@ -42,7 +42,8 @@ Utilitários:
   --version, -v                         Mostra a versão
 
 Limites: --balance --per-tx --monthly --approve-above --per-hour --merchants a.com,b.com --rails card,pix --block gambling,crypto
-Banco: PAYWINGS_DB (padrão ~/.paywings/sandbox.db)`;
+Banco: PAYWINGS_DB (padrão ~/.paywings/sandbox.db)
+Fuso do limite mensal: PAYWINGS_TZ (padrão America/Sao_Paulo)`;
 
 const { values: flags, positionals } = parseArgs({
   allowPositionals: true,
@@ -78,7 +79,7 @@ const dbPath = process.env.PAYWINGS_DB ?? join(homedir(), '.paywings', 'sandbox.
 
 function open() {
   mkdirSync(dirname(dbPath), { recursive: true });
-  return createPayWings({ path: dbPath });
+  return createPayWings({ path: dbPath, timeZone: process.env.PAYWINGS_TZ });
 }
 
 function list(value: string | undefined): string[] {

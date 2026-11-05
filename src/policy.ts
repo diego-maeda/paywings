@@ -34,7 +34,8 @@ export type ReasonCode =
   | 'OVER_MONTHLY_LIMIT'
   | 'VELOCITY_LIMIT'
   | 'INSUFFICIENT_FUNDS'
-  | 'NEEDS_HUMAN_APPROVAL';
+  | 'NEEDS_HUMAN_APPROVAL'
+  | 'PAYEE_UNVERIFIED';
 
 export type Reason = { code: ReasonCode; message: string };
 
@@ -52,6 +53,11 @@ export type EvalInput = {
   /** Executed + pending this month, excluding the request being evaluated. */
   monthCommittedCents: number;
   txLastHour: number;
+  /**
+   * Set when the instrument doesn't name the final payee (a dynamic Pix code only names the
+   * PSP host). Such payments always go to a human, whatever the amount.
+   */
+  payeeUnverified?: boolean;
   /** Set when a human already approved; the approval threshold no longer applies. */
   humanApproved?: boolean;
 };
@@ -103,11 +109,17 @@ export function evaluate(input: EvalInput): Decision {
   if (input.amountCents > input.balanceCents) deny('INSUFFICIENT_FUNDS', 'Wallet balance is too low');
 
   if (reasons.length > 0) return { outcome: 'denied', reasons };
-  if (!input.humanApproved && input.amountCents > policy.approvalAboveCents) {
-    return {
-      outcome: 'pending_approval',
-      reasons: [{ code: 'NEEDS_HUMAN_APPROVAL', message: 'Amount is above the auto-approval threshold' }],
-    };
+  if (input.humanApproved) return { outcome: 'approved', reasons: [] };
+  const needs: Reason[] = [];
+  if (input.amountCents > policy.approvalAboveCents) {
+    needs.push({ code: 'NEEDS_HUMAN_APPROVAL', message: 'Amount is above the auto-approval threshold' });
   }
+  if (input.payeeUnverified) {
+    needs.push({
+      code: 'PAYEE_UNVERIFIED',
+      message: 'Dynamic Pix code: only the PSP is known, not the final payee, so a human must confirm it',
+    });
+  }
+  if (needs.length > 0) return { outcome: 'pending_approval', reasons: needs };
   return { outcome: 'approved', reasons: [] };
 }
