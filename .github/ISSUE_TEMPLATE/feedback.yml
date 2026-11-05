@@ -1,0 +1,28 @@
+name: Feedback from using PayWings
+description: Tell us how PayWings worked with your agent
+labels: [feedback]
+body:
+  - type: input
+    id: client
+    attributes:
+      label: Agent / MCP client
+      placeholder: Claude Code, Claude Desktop, Cursor...
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What did you ask the agent to do?
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      description: Paste the payment status and reasons if relevant. Never paste owner or agent keys.
+    validations:
+      required: true
+  - type: textarea
+    id: wish
+    attributes:
+      label: What would you need to use PayWings with real money?
