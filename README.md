@@ -37,6 +37,8 @@ prints with `-- npx -y paywings mcp` instead of `-- paywings mcp`. Versions foll
 claude mcp add paywings --env PAYWINGS_AGENT_KEY=pw_test_... --env PAYWINGS_DB=~/.paywings/sandbox.db -- paywings mcp
 ```
 
+Using Claude Desktop or Cursor? See [docs/mcp-clients.md](docs/mcp-clients.md).
+
 Then ask your agent to, for example, "upgrade my Vercel plan". It calls `request_payment` and gets back one of three results:
 
 - `executed`, with a single-use card or a Pix receipt;
@@ -123,6 +125,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for commit and release conventions.
    - Pix through a licensed payment initiator (Open Finance);
    - REST API, WhatsApp approvals, web dashboard.
 3. **Network protocols:** agentic tokens from the card networks, ACP/AP2, x402.
+
+## Security
+
+The sandbox's database is a local file your agent's OS user can write. Read [SECURITY.md](SECURITY.md) for what is and isn't protected, and how to report a vulnerability.
 
 ## License
 

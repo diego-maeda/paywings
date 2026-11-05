@@ -1,0 +1,22 @@
+name: Bug report
+description: Something in PayWings doesn't work as documented
+labels: [bug]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Commands you ran. Never paste owner or agent keys.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: PayWings and Node versions
+      placeholder: paywings 0.1.0, node 22.18

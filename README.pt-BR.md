@@ -33,6 +33,8 @@ Depois disso, basta pedir ao agente algo como "assine o plano Pro da Vercel". El
 - `pending_approval`, quando a compra precisa da sua aprovação;
 - a recusa, com os motivos.
 
+Usa Claude Desktop ou Cursor? Veja [docs/mcp-clients.md](docs/mcp-clients.md) (em inglês).
+
 ## Como dono
 
 O `init` também imprime uma chave de dono; guarde num gerenciador de senhas. Criar agentes, mudar limites, recarregar, reativar, aprovar e rejeitar pedem a chave de dono. Digite no prompt (ela não aparece na tela) ou envie na primeira linha da entrada padrão. Nunca a coloque numa variável de ambiente ou arquivo que o agente consiga ler: um agente com acesso ao shell também roda o CLI. Congelar não pede chave, porque parar um agente é sempre seguro.
@@ -55,6 +57,10 @@ paywings pay --amount 19,90 --rail card --merchant Vercel --domain vercel.com --
 paywings pay --amount 35,90 --rail pix --merchant "Loja" --pix "$(paywings pix-code --key loja@exemplo.com --name Loja --city 'Sao Paulo' --amount 35,90)" --category office --reason "..."
 paywings status pay_...
 ```
+
+## Segurança
+
+O banco do sandbox é um arquivo local que o usuário do sistema do agente consegue editar. O [SECURITY.md](SECURITY.md) explica o que está e o que não está protegido e como reportar uma vulnerabilidade.
 
 ## Testes
 
