@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const CLI = join(import.meta.dirname, '..', 'src', 'cli.ts');
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 type Run = { code: number | null; out: string; err: string };
 
@@ -33,6 +34,12 @@ const pay = (amount: string, id: string) => [
   'pay', '--amount', amount, '--rail', 'card', '--merchant', 'X', '--domain', 'x.io',
   '--category', 'software', '--reason', 'teste automatizado', '--idempotency-key', id,
 ];
+
+test('--version prints the package version', () => {
+  const db = join(mkdtempSync(join(tmpdir(), 'paywings-cli-')), 'sandbox.db');
+  assert.equal(cli(db, ['--version']).out.trim(), pkg.version);
+  assert.equal(cli(db, ['-v']).out.trim(), pkg.version);
+});
 
 test('an agent with only its own key cannot raise its limits or top up', () => {
   const { db, agentKey } = sandbox();
