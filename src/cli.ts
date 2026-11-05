@@ -10,8 +10,9 @@ import { createMcpServer } from './mcp.ts';
 import { AmountError, formatBRL, toCents } from './money.ts';
 import type { Policy, Rail } from './policy.ts';
 import { cardStillValid, createPayWings, PayWingsError, toView, type Payment } from './service.ts';
+import { VERSION } from './version.ts';
 
-const HELP = `paywings — sandbox de pagamentos com políticas para agentes de IA
+const HELP = `paywings ${VERSION} — sandbox de pagamentos com políticas para agentes de IA
 
 Dono (humano):
   init                                  Cria o sandbox com o agente "demo" (saldo R$ 500,00)
@@ -34,6 +35,7 @@ Agente (autenticado por PAYWINGS_AGENT_KEY):
 
 Utilitários:
   pix-code --key <chave> --name <nome> --city <cidade> [--amount 35,90]
+  --version, -v                         Mostra a versão
 
 Limites: --balance --per-tx --monthly --approve-above --per-hour --merchants a.com,b.com --rails card,pix --block gambling,crypto
 Banco: PAYWINGS_DB (padrão ~/.paywings/sandbox.db)`;
@@ -64,6 +66,7 @@ const { values: flags, positionals } = parseArgs({
     name: { type: 'string' },
     city: { type: 'string' },
     help: { type: 'boolean', short: 'h' },
+    version: { type: 'boolean', short: 'v' },
   },
 });
 
@@ -132,6 +135,10 @@ async function confirmApproval(p: Payment & { agentName?: string }): Promise<boo
 
 async function main() {
   const [cmd, sub, arg] = positionals;
+  if (flags.version) {
+    console.log(VERSION);
+    return;
+  }
   if (!cmd || flags.help) {
     console.log(HELP);
     return;
