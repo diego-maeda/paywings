@@ -13,7 +13,7 @@ Prompt injection can talk an agent into anything, so spending rules can't live i
 - **The agent asks, the server decides.** Every purchase is a payment intent evaluated by a deterministic policy engine. The agent has no tool to approve, top up, or change limits.
 - **The data decides, not the agent's claim.** For Pix, the payee is read from the BR Code itself. A code that says "Trusted Store" but points to someone else's key is denied.
 - **Minimal exposure.** Cards are single-use, locked to one merchant and amount, and expire after 30 minutes.
-- **Humans approve out of band.** Payments above a threshold wait for the owner. In the sandbox, `approve` requires an interactive terminal, which an agent running shell commands doesn't have.
+- **Humans approve out of band.** Payments above a threshold wait for the owner. In the sandbox, every owner command that changes money or limits asks for an owner key the agent never holds, and `approve` also requires an interactive terminal.
 - **Everything is auditable.** Every event goes into an append-only, hash-chained log: intent, decision, approval, execution. Card numbers never reach the log.
 
 ## Install
@@ -71,10 +71,14 @@ All failing rules are reported at once.
 
 ## Owner commands
 
+`init` also prints an owner key; store it in a password manager. Commands that create agents, change limits, top up, unfreeze, approve or reject ask for the owner key. Type it at the prompt (it isn't echoed) or pipe it as the first line of stdin. Never put it in an environment variable or file your agent can read: an agent with shell access can run the CLI too. Freezing needs no key, since stopping an agent is always safe.
+
+Sandboxes created before the owner key existed: run `paywings owner setup` once.
+
 ```bash
 paywings agents create research --balance 300 --per-tx 100 --monthly 500 --approve-above 30 --merchants vercel.com,openai.com
 paywings pending
-paywings approve pay_...          # interactive terminal; you type the amount to confirm
+paywings approve pay_...          # owner key + interactive terminal; you type the amount to confirm
 paywings reject pay_... --note "not now"
 paywings agents freeze research   # kill switch
 paywings audit verify             # checks the hash chain

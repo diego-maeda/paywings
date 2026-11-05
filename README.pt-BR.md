@@ -35,10 +35,14 @@ Depois disso, basta pedir ao agente algo como "assine o plano Pro da Vercel". El
 
 ## Como dono
 
+O `init` também imprime uma chave de dono; guarde num gerenciador de senhas. Criar agentes, mudar limites, recarregar, reativar, aprovar e rejeitar pedem a chave de dono. Digite no prompt (ela não aparece na tela) ou envie na primeira linha da entrada padrão. Nunca a coloque numa variável de ambiente ou arquivo que o agente consiga ler: um agente com acesso ao shell também roda o CLI. Congelar não pede chave, porque parar um agente é sempre seguro.
+
+Sandbox criado antes da chave de dono: rode `paywings owner setup` uma vez.
+
 ```bash
 paywings agents create pesquisa --balance 300 --per-tx 100 --monthly 500 --approve-above 30 --merchants vercel.com,openai.com
 paywings pending
-paywings approve pay_...        # exige terminal interativo e que você digite o valor
+paywings approve pay_...        # chave de dono + terminal interativo + você digita o valor
 paywings agents freeze pesquisa # kill switch
 paywings audit verify           # confere a cadeia de hashes do log
 ```
